@@ -1,14 +1,18 @@
 import {h, Component} from 'preact'
 
 import SplitContainer from './helpers/SplitContainer.js'
+import TripleSplitContainer from './helpers/TripleSplitContainer.js'
+import CoachPanel from './sidebars/CoachPanel.js'
 import GtpConsole from './sidebars/GtpConsole.js'
 import {EnginePeerList} from './sidebars/PeerList.js'
+import {collectVerdicts, summarizeVerdicts} from '../modules/coachsummary.js'
 
 const setting = {
   get: (key) => window.sabaki.setting.get(key),
   set: (key, value) => window.sabaki.setting.set(key, value),
 }
 const peerListMinHeight = setting.get('view.peerlist_minheight')
+const gtpConsoleMinHeight = setting.get('view.gtpconsole_minheight')
 
 export default class LeftSidebar extends Component {
   constructor() {
@@ -16,6 +20,7 @@ export default class LeftSidebar extends Component {
 
     this.state = {
       peerListHeight: setting.get('view.peerlist_height'),
+      gtpConsoleHeight: setting.get('view.gtpconsole_height'),
       selectedEngineSyncerId: null,
     }
 
@@ -25,6 +30,19 @@ export default class LeftSidebar extends Component {
 
     this.handlePeerListHeightFinish = () => {
       setting.set('view.peerlist_height', this.state.peerListHeight)
+    }
+
+    this.handleTripleSplitChange = ({beginSideSize, endSideSize}) => {
+      this.setState({
+        peerListHeight: Math.max(beginSideSize, peerListMinHeight),
+        gtpConsoleHeight: Math.max(endSideSize, gtpConsoleMinHeight),
+      })
+    }
+
+    this.handleTripleSplitFinish = () => {
+      setting
+        .set('view.peerlist_height', this.state.peerListHeight)
+        .set('view.gtpconsole_height', this.state.gtpConsoleHeight)
     }
 
     this.handleCommandControlStep = ({step}) => {
@@ -72,6 +90,29 @@ export default class LeftSidebar extends Component {
     )
   }
 
+  // The report walks the whole game line, and this component re-renders on
+  // every app state change while the sidebar is open. Recompute only when one
+  // of the three inputs actually changes identity.
+  getCoachReport(tree, gameCurrent, coachByNode) {
+    if (
+      this.reportCache == null ||
+      this.reportCache.tree !== tree ||
+      this.reportCache.gameCurrent !== gameCurrent ||
+      this.reportCache.coachByNode !== coachByNode
+    ) {
+      this.reportCache = {
+        tree,
+        gameCurrent,
+        coachByNode,
+        report: summarizeVerdicts(
+          collectVerdicts(tree, gameCurrent, coachByNode),
+        ),
+      }
+    }
+
+    return this.reportCache.report
+  }
+
   render(
     {
       attachedEngineSyncers,
@@ -80,10 +121,48 @@ export default class LeftSidebar extends Component {
       whiteEngineSyncerId,
       engineGameOngoing,
       showLeftSidebar,
+      showCoachPanel,
       consoleLog,
+      coachMessages,
+      coachByNode,
+      treePosition,
+      gameTrees,
+      gameIndex,
+      gameCurrents,
     },
-    {peerListHeight, selectedEngineSyncerId},
+    {peerListHeight, gtpConsoleHeight, selectedEngineSyncerId},
   ) {
+    let peerList = h(EnginePeerList, {
+      attachedEngineSyncers,
+      analyzingEngineSyncerId,
+      blackEngineSyncerId,
+      whiteEngineSyncerId,
+      selectedEngineSyncerId,
+      engineGameOngoing,
+
+      onEngineSelect: this.handleEngineSelect,
+    })
+
+    let gtpConsole = h(GtpConsole, {
+      show: showLeftSidebar,
+      consoleLog,
+      attachedEngine: attachedEngineSyncers
+        .map((syncer) =>
+          syncer.id !== selectedEngineSyncerId
+            ? null
+            : {
+                name: syncer.engine.name,
+                get commands() {
+                  return syncer.commands
+                },
+              },
+        )
+        .find((x) => x != null),
+
+      onSubmit: this.handleCommandSubmit,
+      onControlStep: this.handleCommandControlStep,
+    })
+
     return h(
       'section',
       {
@@ -91,45 +170,44 @@ export default class LeftSidebar extends Component {
         id: 'leftsidebar',
       },
 
-      h(SplitContainer, {
-        vertical: true,
-        invert: true,
-        sideSize: peerListHeight,
+      !showCoachPanel
+        ? h(SplitContainer, {
+            vertical: true,
+            invert: true,
+            sideSize: peerListHeight,
 
-        sideContent: h(EnginePeerList, {
-          attachedEngineSyncers,
-          analyzingEngineSyncerId,
-          blackEngineSyncerId,
-          whiteEngineSyncerId,
-          selectedEngineSyncerId,
-          engineGameOngoing,
+            sideContent: peerList,
+            mainContent: gtpConsole,
 
-          onEngineSelect: this.handleEngineSelect,
-        }),
+            onChange: this.handlePeerListHeightChange,
+            onFinish: this.handlePeerListHeightFinish,
+          })
+        : h(TripleSplitContainer, {
+            vertical: true,
+            beginSideSize: peerListHeight,
+            endSideSize: gtpConsoleHeight,
 
-        mainContent: h(GtpConsole, {
-          show: showLeftSidebar,
-          consoleLog,
-          attachedEngine: attachedEngineSyncers
-            .map((syncer) =>
-              syncer.id !== selectedEngineSyncerId
-                ? null
-                : {
-                    name: syncer.engine.name,
-                    get commands() {
-                      return syncer.commands
-                    },
-                  },
-            )
-            .find((x) => x != null),
+            beginSideContent: peerList,
 
-          onSubmit: this.handleCommandSubmit,
-          onControlStep: this.handleCommandControlStep,
-        }),
+            // The coach panel takes the flexible middle: it is what the learner
+            // reads, so it gets the space left over from the two fixed panes.
+            mainContent: h(CoachPanel, {
+              show: showLeftSidebar,
+              attached: attachedEngineSyncers.length > 0,
+              coachMessages,
+              currentVerdict: coachByNode[treePosition],
+              report: this.getCoachReport(
+                gameTrees[gameIndex],
+                gameCurrents[gameIndex],
+                coachByNode,
+              ),
+            }),
 
-        onChange: this.handlePeerListHeightChange,
-        onFinish: this.handlePeerListHeightFinish,
-      }),
+            endSideContent: gtpConsole,
+
+            onChange: this.handleTripleSplitChange,
+            onFinish: this.handleTripleSplitFinish,
+          }),
     )
   }
 }

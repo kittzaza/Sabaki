@@ -43,6 +43,7 @@ exports.get = function (props = {}) {
     showGameGraph,
     showCommentBox,
     showLeftSidebar,
+    showCoachPanel,
     engineGameOngoing,
   } = props
 
@@ -490,6 +491,17 @@ exports.get = function (props = {}) {
             toggleSetting('view.show_leftsidebar')
             sabaki.setState(({showLeftSidebar}) => ({
               showLeftSidebar: !showLeftSidebar,
+            }))
+          },
+        },
+        {
+          label: i18n.t('menu.engines', 'Show &Coach Panel'),
+          type: 'checkbox',
+          checked: !!showCoachPanel,
+          click: () => {
+            toggleSetting('view.show_coachpanel')
+            sabaki.setState(({showCoachPanel}) => ({
+              showCoachPanel: !showCoachPanel,
             }))
           },
         },

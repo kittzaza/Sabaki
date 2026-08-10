@@ -62,6 +62,7 @@ let defaults = {
   'cleanmarkup.square': true,
   'cleanmarkup.triangle': true,
   'cleanmarkup.winrate': false,
+  'coach.max_history_count': 200,
   'comments.show_move_interpretation': true,
   'comments.commit_delay': 500,
   'console.max_history_count': 1000,
@@ -187,6 +188,10 @@ let defaults = {
   'view.animated_stone_placement': true,
   'view.coordinates_type': 'A1',
   'view.fuzzy_stone_placement': true,
+  // Height of the GTP console when the coach panel is shown. The coach panel
+  // itself takes the remaining space — it is the primary surface in this fork.
+  'view.gtpconsole_height': 170,
+  'view.gtpconsole_minheight': 60,
   'view.leftsidebar_width': 250,
   'view.leftsidebar_minwidth': 100,
   'view.move_numbers_type': 'start',
@@ -195,7 +200,10 @@ let defaults = {
   'view.properties_height': 50,
   'view.properties_minheight': 20,
   'view.show_menubar': true,
-  'view.show_leftsidebar': false,
+  // This fork is a coaching app: the coach has to be visible on first launch,
+  // and it lives in the engines sidebar.
+  'view.show_leftsidebar': true,
+  'view.show_coachpanel': true,
   'view.show_comments': false,
   'view.show_coordinates': false,
   'view.show_graph': false,

@@ -315,6 +315,219 @@ header {
     visibility: visible;
 }
 
+/* Thai Go Coach panel.
+   Deliberately not monospace and always wrapping: this is prose for a learner,
+   not a machine log. Fixed-width text truncated at the panel edge was the main
+   reason the GTP console failed as a teaching surface. */
+.coach-panel {
+    /* Flex rather than grid: the summary and the pinned verdict are each
+       present only sometimes, and grid auto-placement would drop the feed into
+       a content-sized row when they are absent, breaking its scrolling. */
+    display: flex;
+    flex-direction: column;
+    background: #16181c;
+    color: #e4e4e4;
+    font: 14px/1.55 'Segoe UI', 'Noto Sans Thai', 'Leelawadee UI', system-ui, sans-serif;
+    overflow: hidden;
+    z-index: 1;
+  }
+  .coach-panel p {
+    margin: 0 0 .25em;
+    overflow-wrap: break-word;
+    word-break: break-word;
+  }
+  .coach-panel .header {
+    display: flex;
+    flex: none;
+    align-items: center;
+    gap: 8px;
+    height: 28px;
+    padding: 0 10px;
+    background: #0f1115;
+    border-bottom: 1px solid #262a31;
+  }
+  .coach-panel .header .title {
+    font-weight: bold;
+    color: #8CDCDA;
+  }
+  .coach-panel .header .hint {
+    color: #777;
+    font-size: 12px;
+  }
+  .coach-panel .feed {
+    flex: 1 1 auto;
+    min-height: 0;
+    padding: 6px 10px 10px;
+    overflow-y: auto;
+    overflow-x: hidden;
+    user-select: text;
+    cursor: auto;
+  }
+  .coach-panel > .coach-verdict.pinned,
+  .coach-panel > .coach-summary {
+    flex: none;
+  }
+  /* Expanded, the report can outgrow the panel; let it scroll on its own rather
+     than squeezing the feed to nothing. */
+  .coach-panel.summary-open > .coach-summary {
+    max-height: 55%;
+    overflow-y: auto;
+  }
+
+  .coach-summary {
+    background: #0f1115;
+    border-bottom: 1px solid #262a31;
+    font-size: 13px;
+  }
+  .coach-summary .summary-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 10px;
+    cursor: pointer;
+    user-select: none;
+  }
+  .coach-summary .summary-header:hover { background: rgba(255, 255, 255, .05); }
+  .coach-summary .summary-header .title { font-weight: bold; }
+  .coach-summary .summary-header .toggle {
+    color: #8CDCDA;
+    font-size: 12px;
+  }
+  .coach-summary .placeholder {
+    padding: 0 10px 8px;
+    color: #777;
+  }
+  .coach-summary .player {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 10px;
+  }
+  .coach-summary .player .who {
+    width: 2.2em;
+    color: #9aa0a6;
+  }
+  .coach-summary .player .counts {
+    display: flex;
+    gap: 4px;
+  }
+  .coach-summary .player .tally {
+    min-width: 1.6em;
+    padding: 0 4px;
+    border-radius: 3px;
+    background: rgba(255, 255, 255, .08);
+    font-family: Consolas, Menlo, Monaco, monospace;
+    text-align: center;
+  }
+  .coach-summary .player .total {
+    margin-left: auto;
+    color: #9aa0a6;
+    font-size: 12px;
+  }
+  .coach-summary .section { padding: 4px 10px 6px; }
+  .coach-summary .section-title {
+    color: #9aa0a6;
+    font-size: 12px;
+    margin-bottom: 2px;
+  }
+  .coach-summary ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+  .coach-summary li {
+    display: flex;
+    gap: 8px;
+    align-items: baseline;
+  }
+  .coach-summary li a {
+    color: #8CDCDA;
+    text-decoration: none;
+  }
+  .coach-summary li a:hover { text-decoration: underline; }
+  .coach-summary li .detail {
+    margin-left: auto;
+    color: #9aa0a6;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .coach-summary li.excellent a { color: #6BBF59; }
+  .coach-summary li.good a { color: #8CDCDA; }
+  .coach-summary li.fair a { color: #FFCC66; }
+  .coach-summary li.mistake a { color: #F2903D; }
+  .coach-summary li.blunder a { color: #F25C3D; }
+
+  .coach-summary .tally.excellent { color: #6BBF59; }
+  .coach-summary .tally.good { color: #8CDCDA; }
+  .coach-summary .tally.fair { color: #FFCC66; }
+  .coach-summary .tally.mistake { color: #F2903D; }
+  .coach-summary .tally.blunder { color: #F25C3D; }
+  .coach-panel .placeholder {
+    color: #777;
+    padding-top: .5em;
+  }
+
+  .coach-verdict {
+    margin: 6px 0;
+    padding: 6px 8px;
+    border-left: 3px solid #555;
+    background: rgba(255, 255, 255, .03);
+    user-select: text;
+  }
+  /* The pinned verdict is the one for the move you are standing on, so it sits
+     above the feed and is visually anchored rather than scrolling away. */
+  .coach-verdict.pinned {
+    margin: 0;
+    border-left: none;
+    border-bottom: 1px solid #262a31;
+    background: rgba(255, 255, 255, .06);
+  }
+  .coach-verdict .headline {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: .2em;
+  }
+  .coach-verdict .headline .vertex {
+    font-weight: bold;
+    font-family: Consolas, Menlo, Monaco, monospace;
+  }
+  .coach-verdict .headline .label { font-weight: bold; }
+  .coach-verdict .headline .loss {
+    margin-left: auto;
+    font-family: Consolas, Menlo, Monaco, monospace;
+    opacity: .85;
+  }
+  .coach-verdict .flag {
+    color: #b58900;
+    font-size: 12px;
+  }
+  .coach-verdict .pv {
+    margin-top: .35em;
+    font-family: Consolas, Menlo, Monaco, monospace;
+    font-size: 12px;
+    color: #9aa0a6;
+  }
+  .coach-verdict .pv .arrow { margin: 0 .3em; opacity: .5; }
+
+  .coach-verdict.excellent { border-left-color: #6BBF59; }
+  .coach-verdict.excellent .label { color: #6BBF59; }
+  .coach-verdict.good { border-left-color: #8CDCDA; }
+  .coach-verdict.good .label { color: #8CDCDA; }
+  .coach-verdict.fair { border-left-color: #FFCC66; }
+  .coach-verdict.fair .label { color: #FFCC66; }
+  .coach-verdict.mistake { border-left-color: #F2903D; }
+  .coach-verdict.mistake .label { color: #F2903D; }
+  .coach-verdict.blunder { border-left-color: #F25C3D; }
+  .coach-verdict.blunder .label { color: #F25C3D; }
+
+  .coach-position {
+    margin: 6px 0;
+    color: #9aa0a6;
+    font-size: 13px;
+    user-select: text;
+}
+
 .gtp-console {
     display: grid;
     grid-template-rows: calc(100% - 40px) 40px;

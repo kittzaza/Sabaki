@@ -37,6 +37,11 @@ const setting = {
   },
 }
 
+// Marker the Thai Go Coach GTP proxy puts in front of a JSON advice event on
+// stderr. The trailing digit is the payload format version: a breaking change
+// bumps it so an older build ignores lines it cannot read instead of crashing.
+const coachEventPrefix = '@@COACH1@@'
+
 class Sabaki extends EventEmitter {
   constructor() {
     super()
@@ -89,6 +94,7 @@ class Sabaki extends EventEmitter {
 
       consoleLog: [],
       showLeftSidebar: setting.get('view.show_leftsidebar'),
+      showCoachPanel: setting.get('view.show_coachpanel'),
       leftSidebarWidth: setting.get('view.leftsidebar_width'),
       showWinrateGraph: setting.get('view.show_winrategraph'),
       showGameGraph: setting.get('view.show_graph'),
@@ -107,6 +113,13 @@ class Sabaki extends EventEmitter {
       engineGameOngoing: null,
       analysisTreePosition: null,
       analysis: null,
+
+      // Coach — structured advice emitted by the Thai Go Coach GTP proxy.
+      // coachMessages is the running feed; coachByNode indexes move verdicts by
+      // the tree node of the move they judge, so navigating the game shows the
+      // commentary for whichever move you are standing on.
+      coachMessages: [],
+      coachByNode: {},
 
       // Drawers
 
@@ -693,6 +706,10 @@ class Sabaki extends EventEmitter {
         gameCurrents: gameTrees.map((_) => ({})),
         boardTransformation: '',
       })
+
+      // Coach commentary is keyed by node id, which belongs to the tree that
+      // was just replaced. Drop it so a new game starts with a clean slate.
+      this.clearCoach()
 
       let [firstTree] = gameTrees
       this.setCurrentTreePosition(firstTree, firstTree.root.id, {
@@ -1934,6 +1951,13 @@ class Sabaki extends EventEmitter {
           engine: engine.name,
         })
 
+        // Structured coach advice is consumed by the coach panel, not shown as
+        // console output — it is machine data, not a human-readable log line.
+        if (content.startsWith(coachEventPrefix)) {
+          this.handleCoachEvent(content.slice(coachEventPrefix.length))
+          return
+        }
+
         this.setState(({consoleLog}) => {
           let lastIndex = consoleLog.length - 1
           let lastEntry = consoleLog[lastIndex]
@@ -2319,6 +2343,83 @@ class Sabaki extends EventEmitter {
       analysisTreePosition: null,
       analyzingEngineSyncerId: null,
     })
+  }
+
+  // Coach
+  //
+  // The Thai Go Coach GTP proxy writes advice to stderr as JSON behind the
+  // coachEventPrefix marker. Sabaki only stores and displays it — all coaching
+  // logic, thresholds and Thai wording live in the proxy, which is unit-tested
+  // on its own.
+
+  handleCoachEvent(payload) {
+    let event
+
+    try {
+      event = JSON.parse(payload)
+    } catch (err) {
+      // A malformed event is the proxy's bug to fix; dropping the line keeps
+      // the engine usable instead of taking the renderer down with it.
+      return
+    }
+
+    if (event == null || typeof event !== 'object') return
+
+    let maxLength = setting.get('coach.max_history_count')
+
+    this.setState(({coachMessages}) => ({
+      coachMessages: [...coachMessages, event].slice(-maxLength),
+    }))
+
+    if (event.type === 'verdict') {
+      let nodeId = this.resolveCoachNode(event)
+
+      if (nodeId != null) {
+        this.setState(({coachByNode}) => ({
+          coachByNode: {...coachByNode, [nodeId]: event},
+        }))
+      }
+    }
+  }
+
+  // Finds the tree node a verdict is about, or null if it cannot be identified
+  // with certainty. A verdict describes the move that produced the position the
+  // engine is analysing, so the search starts there and walks back to the depth
+  // the proxy reported.
+  resolveCoachNode({moveNumber, color, vertex}) {
+    if (typeof moveNumber !== 'number' || typeof vertex !== 'string')
+      return null
+
+    let {gameTrees, gameIndex, analysisTreePosition, treePosition} = this.state
+    let tree = gameTrees[gameIndex]
+    if (tree == null) return null
+
+    let startId =
+      analysisTreePosition != null ? analysisTreePosition : treePosition
+    let level = tree.getLevel(startId)
+    if (level == null || level < moveNumber) return null
+
+    let node = tree.get(startId)
+    for (let i = level; i > moveNumber && node != null; i--) {
+      node = tree.get(node.parentId)
+    }
+    if (node == null) return null
+
+    // Depth alone is not proof: switching variation or reloading a file can put
+    // a different move at the same depth. Only attach when the move matches.
+    let property = color === 'W' ? 'W' : 'B'
+    if (node.data[property] == null) return null
+
+    let board = gametree.getBoard(tree, node.id)
+    let played = board.stringifyVertex(sgf.parseVertex(node.data[property][0]))
+
+    return played != null && played.toUpperCase() === vertex.toUpperCase()
+      ? node.id
+      : null
+  }
+
+  clearCoach() {
+    this.setState({coachMessages: [], coachByNode: {}})
   }
 
   // Find Methods
