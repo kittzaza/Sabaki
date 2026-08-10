@@ -75,9 +75,12 @@ jobs:
         working-directory: sabaki
         run: node scripts/stageCoachEngine.js
 
-      - name: Build the installer
+      # Both an installer and a portable build: the portable one matters for
+      # anyone who cannot install software on the machine they use, which in a
+      # teaching program includes school and university computers.
+      - name: Build the installer and the portable build
         working-directory: sabaki
-        run: npm run dist:win64
+        run: npm run dist:win
 
       # No auto-update client ships yet, so the metadata electron-builder emits
       # for one would only mislead.
