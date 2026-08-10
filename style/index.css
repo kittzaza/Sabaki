@@ -354,6 +354,35 @@ header {
     color: #777;
     font-size: 12px;
   }
+  .coach-panel .header .review-progress {
+    margin-left: auto;
+    color: #9aa0a6;
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+  }
+  .coach-panel .header .review-button {
+    margin-left: auto;
+    padding: 1px 8px;
+    border: 1px solid #3a4048;
+    border-radius: 3px;
+    background: #1d2128;
+    color: #8CDCDA;
+    font: inherit;
+    font-size: 12px;
+    cursor: pointer;
+  }
+  .coach-panel .header .review-progress + .review-button { margin-left: 6px; }
+  .coach-panel .header .review-button:hover:not(:disabled) { background: #262b33; }
+  .coach-panel .header .review-button:disabled {
+    color: #666;
+    cursor: default;
+  }
+  .coach-panel .review-bar {
+    flex: none;
+    height: 2px;
+    background: #8CDCDA;
+    transition: width .2s;
+  }
   .coach-panel .feed {
     flex: 1 1 auto;
     min-height: 0;

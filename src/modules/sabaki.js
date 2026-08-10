@@ -19,6 +19,7 @@ import * as gobantransformer from './gobantransformer.js'
 import * as gtplogger from './gtplogger.js'
 import * as helper from './helper.js'
 import * as sound from './sound.js'
+import {coachProperty, encodeVerdict, readVerdicts} from './coachstorage.js'
 
 deadstones.useFetch('./node_modules/@sabaki/deadstones/wasm/deadstones_bg.wasm')
 
@@ -120,6 +121,7 @@ class Sabaki extends EventEmitter {
       // commentary for whichever move you are standing on.
       coachMessages: [],
       coachByNode: {},
+      coachReview: null,
 
       // Drawers
 
@@ -708,8 +710,11 @@ class Sabaki extends EventEmitter {
       })
 
       // Coach commentary is keyed by node id, which belongs to the tree that
-      // was just replaced. Drop it so a new game starts with a clean slate.
+      // was just replaced, so the in-memory feed starts clean. Any review saved
+      // in the file itself is then read back, so reopening a game you reviewed
+      // yesterday shows that review rather than a blank panel.
       this.clearCoach()
+      this.setState({coachByNode: readVerdicts(gameTrees[0])})
 
       let [firstTree] = gameTrees
       this.setCurrentTreePosition(firstTree, firstTree.root.id, {
@@ -1587,6 +1592,13 @@ class Sabaki extends EventEmitter {
       treePosition,
     })
 
+    // Switching between games in a multi-game file swaps the whole tree, so
+    // commentary indexed by node id belongs to the game being left. Load the
+    // review saved in the game being entered instead of carrying stale entries.
+    if (gameIndex !== prevGameIndex) {
+      this.setState({coachMessages: [], coachByNode: readVerdicts(tree)})
+    }
+
     this.recordHistory({prevGameIndex, prevTreePosition})
 
     if (navigated) this.events.emit('navigate')
@@ -2378,28 +2390,65 @@ class Sabaki extends EventEmitter {
         this.setState(({coachByNode}) => ({
           coachByNode: {...coachByNode, [nodeId]: event},
         }))
+
+        this.storeCoachVerdict(nodeId, event)
       }
     }
   }
 
+  // Writes the verdict onto its node so it survives closing the app. Marks the
+  // file modified, exactly as analysis already does when it records SBKV/SBKS.
+  storeCoachVerdict(nodeId, event) {
+    let {gameTrees, gameIndex, treePosition} = this.state
+    let tree = gameTrees[gameIndex]
+    if (tree == null || tree.get(nodeId) == null) return
+
+    let newTree = tree.mutate((draft) => {
+      draft.updateProperty(nodeId, coachProperty, [encodeVerdict(event)])
+    })
+
+    this.setCurrentTreePosition(newTree, treePosition)
+  }
+
   // Finds the tree node a verdict is about, or null if it cannot be identified
-  // with certainty. A verdict describes the move that produced the position the
-  // engine is analysing, so the search starts there and walks back to the depth
-  // the proxy reported.
-  resolveCoachNode({moveNumber, color, vertex}) {
+  // with certainty.
+  //
+  // Two anchors are tried, because the two ways a verdict is produced leave the
+  // app in different states. A move the engine had already searched is judged
+  // the instant it is played, while analysis still points at the position
+  // before it; a move the engine ignored can only be priced once the following
+  // position has been searched, by which time analysis has caught up. Anchoring
+  // on only one of them silently drops every verdict of the other kind.
+  //
+  // Trying both is safe because the move itself is verified before attaching:
+  // a wrong anchor fails that check rather than mislabelling a move.
+  resolveCoachNode(event) {
+    for (let anchor of [
+      this.state.treePosition,
+      this.state.analysisTreePosition,
+    ]) {
+      let nodeId = this.findCoachNodeFrom(anchor, event)
+      if (nodeId != null) return nodeId
+    }
+
+    return null
+  }
+
+  // Walks back from `anchor` to the reported move number and confirms the move
+  // played there is the one the verdict describes.
+  findCoachNodeFrom(anchor, {moveNumber, color, vertex}) {
+    if (anchor == null) return null
     if (typeof moveNumber !== 'number' || typeof vertex !== 'string')
       return null
 
-    let {gameTrees, gameIndex, analysisTreePosition, treePosition} = this.state
+    let {gameTrees, gameIndex} = this.state
     let tree = gameTrees[gameIndex]
     if (tree == null) return null
 
-    let startId =
-      analysisTreePosition != null ? analysisTreePosition : treePosition
-    let level = tree.getLevel(startId)
+    let level = tree.getLevel(anchor)
     if (level == null || level < moveNumber) return null
 
-    let node = tree.get(startId)
+    let node = tree.get(anchor)
     for (let i = level; i > moveNumber && node != null; i--) {
       node = tree.get(node.parentId)
     }
@@ -2420,6 +2469,92 @@ class Sabaki extends EventEmitter {
 
   clearCoach() {
     this.setState({coachMessages: [], coachByNode: {}})
+  }
+
+  // Reviews a whole game move by move.
+  //
+  // The coach judges a move by comparing the analysis either side of it, so a
+  // verdict only exists for a move that was stepped through with analysis
+  // running. Loading a finished game and jumping to the end therefore produces
+  // nothing — which is exactly the game a student most wants reviewed. This
+  // drives that walk automatically: sit on each position until the search is
+  // deep enough to trust, step forward, repeat.
+  async startCoachReview() {
+    let t = i18n.context('sabaki.coach')
+    if (this.state.coachReview != null) return
+
+    let syncer = this.inferredState.analyzingEngineSyncer
+    if (syncer == null) {
+      await dialog.showMessageBox(
+        t('Turn on analysis with a coach engine before reviewing a game.'),
+        'info',
+      )
+      return
+    }
+
+    let {gameTrees, gameIndex, gameCurrents} = this.state
+    let total =
+      gameTrees[gameIndex].getCurrentHeight(gameCurrents[gameIndex]) - 1
+    if (total <= 0) return
+
+    let visits = setting.get('coach.review_visits')
+    let moveTimeout = setting.get('coach.review_move_timeout')
+
+    this.setState({coachReview: {current: 0, total}})
+    this.goToBeginning()
+
+    try {
+      for (let i = 0; i < total; i++) {
+        // Wait before stepping, not after: the verdict for the move about to be
+        // played is measured against the position being left, so that position
+        // has to be searched first.
+        await this.waitForAnalysisDepth(visits, moveTimeout)
+        if (this.state.coachReview == null) return
+
+        this.goStep(1)
+        this.setState(({coachReview}) =>
+          coachReview == null
+            ? {}
+            : {coachReview: {...coachReview, current: i + 1}},
+        )
+      }
+
+      // One more dwell so the final move's verdict can still arrive: when the
+      // engine never searched the move, its cost is only known once the
+      // following position has been analysed.
+      await this.waitForAnalysisDepth(visits, moveTimeout)
+    } finally {
+      this.setState({coachReview: null})
+    }
+  }
+
+  stopCoachReview() {
+    this.setState({coachReview: null})
+  }
+
+  // Resolves once the current position has been searched to `visits`, or once
+  // `timeout` has passed. Timing out is not an error: a slow engine should make
+  // the review shallower, not make it hang.
+  waitForAnalysisDepth(visits, timeout) {
+    return new Promise((resolve) => {
+      let deadline = Date.now() + timeout
+
+      let check = () => {
+        if (this.state.coachReview == null) return resolve()
+
+        let {analysis, analysisTreePosition, treePosition} = this.state
+        let deep =
+          analysis != null &&
+          analysisTreePosition === treePosition &&
+          analysis.variations.length > 0 &&
+          analysis.variations[0].visits >= visits
+
+        if (deep || Date.now() > deadline) return resolve()
+        setTimeout(check, 200)
+      }
+
+      check()
+    })
   }
 
   // Find Methods

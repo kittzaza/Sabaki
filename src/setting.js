@@ -63,6 +63,11 @@ let defaults = {
   'cleanmarkup.triangle': true,
   'cleanmarkup.winrate': false,
   'coach.max_history_count': 200,
+  // How deep to search each position when reviewing a whole game. Higher is a
+  // better verdict and a slower review; at ~290 visits/s a 200-move game takes
+  // roughly two minutes at this setting.
+  'coach.review_visits': 200,
+  'coach.review_move_timeout': 20000,
   'comments.show_move_interpretation': true,
   'comments.commit_delay': 500,
   'console.max_history_count': 1000,

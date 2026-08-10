@@ -14,6 +14,12 @@ export const severityCount = 5
 // report a "turning point" on almost every move.
 const minTurningPointSwing = 1.0
 
+// Severity 0 is the band the coach calls flawless. Listing such a move under
+// "costliest moves" reads as criticism of a move that cost nothing, so a
+// well-played game should show a short list, or none at all, rather than being
+// padded to a fixed length.
+const minSeverityForWorstList = 1
+
 // Score lead as seen from Black, so leads from both players' verdicts can be
 // compared on one axis. A verdict's `best.scoreLead` is the lead of the player
 // about to move, measured before that move is played.
@@ -56,14 +62,17 @@ export function summarizeVerdicts(verdicts, {worstCount = 3} = {}) {
       measured++
       player.counts[event.severity]++
       player.totalLoss += event.loss
-      player.worst.push({
-        nodeId,
-        moveNumber: event.moveNumber,
-        vertex: event.vertex,
-        label: event.label,
-        severity: event.severity,
-        loss: event.loss,
-      })
+
+      if (event.severity >= minSeverityForWorstList) {
+        player.worst.push({
+          nodeId,
+          moveNumber: event.moveNumber,
+          vertex: event.vertex,
+          label: event.label,
+          severity: event.severity,
+          loss: event.loss,
+        })
+      }
     }
   }
 

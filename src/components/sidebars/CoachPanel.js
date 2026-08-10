@@ -103,6 +103,9 @@ const summaryText = {
   unmeasured: 'วัดไม่ได้',
   toggleShow: 'ดูสรุปทั้งเกม',
   toggleHide: 'ซ่อนสรุป',
+  review: 'รีวิวทั้งเกม',
+  reviewing: 'กำลังรีวิว',
+  cancel: 'ยกเลิก',
 }
 
 function goToNode(nodeId) {
@@ -282,7 +285,10 @@ export default class CoachPanel extends Component {
     }
   }
 
-  render({coachMessages, currentVerdict, attached, report}, {summaryExpanded}) {
+  render(
+    {coachMessages, currentVerdict, attached, report, review},
+    {summaryExpanded},
+  ) {
     let empty = coachMessages.length === 0
 
     return h(
@@ -294,7 +300,42 @@ export default class CoachPanel extends Component {
         {class: 'header'},
         h('span', {class: 'title'}, 'โค้ชโกะ'),
         !attached ? h('span', {class: 'hint'}, 'ยังไม่ได้ต่อ engine') : null,
+
+        review != null
+          ? [
+              h(
+                'span',
+                {class: 'review-progress'},
+                `${summaryText.reviewing} ${review.current}/${review.total}`,
+              ),
+              h(
+                'button',
+                {
+                  class: 'review-button',
+                  onClick: () => sabaki.stopCoachReview(),
+                },
+                summaryText.cancel,
+              ),
+            ]
+          : h(
+              'button',
+              {
+                class: 'review-button',
+                disabled: !attached,
+                onClick: () => sabaki.startCoachReview(),
+              },
+              summaryText.review,
+            ),
       ),
+
+      review != null
+        ? h('div', {
+            class: 'review-bar',
+            style: {
+              width: `${Math.round((review.current / Math.max(review.total, 1)) * 100)}%`,
+            },
+          })
+        : null,
 
       report != null && report.moves > 0
         ? h(CoachSummary, {

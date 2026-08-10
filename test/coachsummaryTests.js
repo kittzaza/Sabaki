@@ -87,6 +87,34 @@ describe('summarizeVerdicts', () => {
     assert.strictEqual(report.players.B.worst[0].nodeId, 'n3')
   })
 
+  // "Costliest moves" naming a move the coach called flawless reads as
+  // criticism of a move that cost nothing.
+  it('leaves flawless moves out of the costliest list', () => {
+    let report = summarizeVerdicts([
+      verdict(1, 'B', 'D4', 0, 0.0),
+      verdict(3, 'B', 'C3', 0, 0.2),
+      verdict(5, 'B', 'T1', 1, 1.1),
+    ])
+
+    assert.deepStrictEqual(
+      report.players.B.worst.map((x) => x.vertex),
+      ['T1'],
+    )
+  })
+
+  it('reports no costliest moves at all for a flawless game', () => {
+    let report = summarizeVerdicts([
+      verdict(1, 'B', 'D4', 0, 0.1),
+      verdict(2, 'W', 'Q16', 0, 0.0),
+    ])
+
+    assert.deepStrictEqual(report.players.B.worst, [])
+    assert.deepStrictEqual(report.players.W.worst, [])
+    // ยังต้องนับหมากและรวมแต้มตามปกติ
+    assert.strictEqual(report.players.B.totalLoss, 0.1)
+    assert.deepStrictEqual(report.players.B.counts, [1, 0, 0, 0, 0])
+  })
+
   it('breaks ties by move order so the report does not reshuffle', () => {
     let report = summarizeVerdicts([
       verdict(5, 'B', 'T1', 3, 4.0),
@@ -104,15 +132,20 @@ describe('summarizeVerdicts', () => {
   // that would flatter the player with exactly the moves the engine ignored.
   it('counts unmeasured moves as played but not as good', () => {
     let report = summarizeVerdicts([
-      verdict(1, 'B', 'D4', 0, 0.1),
+      verdict(1, 'B', 'D4', 3, 4.0),
       unmeasured(3, 'B', 'A1'),
     ])
 
     assert.strictEqual(report.players.B.moves, 2)
     assert.strictEqual(report.measured, 1)
-    assert.deepStrictEqual(report.players.B.counts, [1, 0, 0, 0, 0])
-    assert.strictEqual(report.players.B.totalLoss, 0.1)
-    assert.strictEqual(report.players.B.worst.length, 1)
+    assert.deepStrictEqual(report.players.B.counts, [0, 0, 0, 1, 0])
+    assert.strictEqual(report.players.B.totalLoss, 4)
+
+    // มีหมากพลาดจริงอยู่ในรายการ แต่หมากที่วัดไม่ได้ต้องไม่ถูกจัดอันดับด้วย
+    assert.deepStrictEqual(
+      report.players.B.worst.map((x) => x.vertex),
+      ['D4'],
+    )
   })
 
   it('handles a game with no verdicts at all', () => {

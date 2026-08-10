@@ -125,6 +125,7 @@ export default class LeftSidebar extends Component {
       consoleLog,
       coachMessages,
       coachByNode,
+      coachReview,
       treePosition,
       gameTrees,
       gameIndex,
@@ -196,6 +197,7 @@ export default class LeftSidebar extends Component {
               attached: attachedEngineSyncers.length > 0,
               coachMessages,
               currentVerdict: coachByNode[treePosition],
+              review: coachReview,
               report: this.getCoachReport(
                 gameTrees[gameIndex],
                 gameCurrents[gameIndex],
