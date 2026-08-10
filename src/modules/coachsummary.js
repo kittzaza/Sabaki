@@ -149,6 +149,28 @@ export function findTurningPoints(verdicts, {limit = 3} = {}) {
  * (see `getCurrentHeight` in @sabaki/immutable-gametree), including stopping
  * when a recorded id no longer exists in the tree.
  */
+/**
+ * Lists every node that records a move, in depth-first order.
+ *
+ * Reviewing follows this order because a move can only be judged from the
+ * position before it, and depth-first always reaches a parent before its
+ * children — so consecutive entries are usually a single step apart and the
+ * engine rarely has to resynchronise.
+ *
+ * Variations are included: a line the player explored is part of what they were
+ * thinking, and skipping it would leave the panel blank exactly when they
+ * switch to it to ask "would that have been better?".
+ */
+export function listReviewableNodes(tree) {
+  let result = []
+
+  for (let node of tree.listNodes()) {
+    if (node.data.B != null || node.data.W != null) result.push(node)
+  }
+
+  return result
+}
+
 export function collectVerdicts(tree, gameCurrent, coachByNode) {
   let verdicts = []
   let node = tree.root

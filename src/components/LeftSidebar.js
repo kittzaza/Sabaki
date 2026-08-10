@@ -91,18 +91,22 @@ export default class LeftSidebar extends Component {
   }
 
   // The report walks the whole game line, and this component re-renders on
-  // every app state change while the sidebar is open. Recompute only when one
-  // of the three inputs actually changes identity.
-  getCoachReport(tree, gameCurrent, coachByNode) {
+  // every app state change while the sidebar is open, so it is cached.
+  //
+  // Keyed on treePosition rather than on the currents map, because Sabaki
+  // mutates that map in place when you navigate: comparing it by identity would
+  // never invalidate, leaving the report frozen on whichever variation happened
+  // to be open first. treePosition changes whenever the line on screen can.
+  getCoachReport(tree, gameCurrent, treePosition, coachByNode) {
     if (
       this.reportCache == null ||
       this.reportCache.tree !== tree ||
-      this.reportCache.gameCurrent !== gameCurrent ||
+      this.reportCache.treePosition !== treePosition ||
       this.reportCache.coachByNode !== coachByNode
     ) {
       this.reportCache = {
         tree,
-        gameCurrent,
+        treePosition,
         coachByNode,
         report: summarizeVerdicts(
           collectVerdicts(tree, gameCurrent, coachByNode),
@@ -126,6 +130,7 @@ export default class LeftSidebar extends Component {
       coachMessages,
       coachByNode,
       coachReview,
+      coachCriteria,
       treePosition,
       gameTrees,
       gameIndex,
@@ -198,9 +203,11 @@ export default class LeftSidebar extends Component {
               coachMessages,
               currentVerdict: coachByNode[treePosition],
               review: coachReview,
+              criteria: coachCriteria,
               report: this.getCoachReport(
                 gameTrees[gameIndex],
                 gameCurrents[gameIndex],
+                treePosition,
                 coachByNode,
               ),
             }),

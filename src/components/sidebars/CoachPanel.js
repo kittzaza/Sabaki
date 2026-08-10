@@ -30,7 +30,7 @@ class CoachVerdict extends Component {
     return event !== this.props.event
   }
 
-  render({event, pinned}) {
+  render({event, pinned, staleCriteria}) {
     let {label, vertex, loss, lossUnit, severity, lines} = event
 
     let lossText =
@@ -53,6 +53,11 @@ class CoachVerdict extends Component {
         {class: 'headline'},
         h('span', {class: 'vertex'}, vertex),
         h('span', {class: 'label'}, label),
+        // A verdict graded by different criteria is not comparable with today's
+        // numbers; say so rather than let it pass as current.
+        staleCriteria
+          ? h('span', {class: 'stale', title: summaryText.staleHint}, '⚠')
+          : null,
         lossText != null ? h('span', {class: 'loss'}, lossText) : null,
       ),
 
@@ -106,6 +111,19 @@ const summaryText = {
   review: 'รีวิวทั้งเกม',
   reviewing: 'กำลังรีวิว',
   cancel: 'ยกเลิก',
+  staleHint:
+    'คำวิจารณ์นี้ตัดสินด้วยเกณฑ์คนละรุ่นกับโค้ชที่ต่ออยู่ตอนนี้ ตัวเลขจึงเทียบกันตรง ๆ ไม่ได้',
+  staleSummary: 'บางส่วนใช้เกณฑ์เก่า',
+}
+
+// A stored verdict is only known to be outdated once an attached coach has
+// reported which criteria it grades by; before that there is nothing to compare.
+function isStaleCriteria(event, current) {
+  return (
+    typeof current === 'number' &&
+    typeof event.criteria === 'number' &&
+    event.criteria !== current
+  )
 }
 
 function goToNode(nodeId) {
@@ -286,7 +304,7 @@ export default class CoachPanel extends Component {
   }
 
   render(
-    {coachMessages, currentVerdict, attached, report, review},
+    {coachMessages, currentVerdict, attached, report, review, criteria},
     {summaryExpanded},
   ) {
     let empty = coachMessages.length === 0
@@ -346,7 +364,11 @@ export default class CoachPanel extends Component {
         : null,
 
       currentVerdict != null
-        ? h(CoachVerdict, {event: currentVerdict, pinned: true})
+        ? h(CoachVerdict, {
+            event: currentVerdict,
+            pinned: true,
+            staleCriteria: isStaleCriteria(currentVerdict, criteria),
+          })
         : null,
 
       h(
@@ -366,7 +388,12 @@ export default class CoachPanel extends Component {
             )
           : coachMessages.map((event, i) =>
               event.type === 'verdict'
-                ? h(CoachVerdict, {key: i, event, pinned: false})
+                ? h(CoachVerdict, {
+                    key: i,
+                    event,
+                    pinned: false,
+                    staleCriteria: isStaleCriteria(event, criteria),
+                  })
                 : h(CoachPosition, {key: i, event}),
             ),
       ),

@@ -20,6 +20,7 @@ import * as gtplogger from './gtplogger.js'
 import * as helper from './helper.js'
 import * as sound from './sound.js'
 import {coachProperty, encodeVerdict, readVerdicts} from './coachstorage.js'
+import {listReviewableNodes} from './coachsummary.js'
 
 deadstones.useFetch('./node_modules/@sabaki/deadstones/wasm/deadstones_bg.wasm')
 
@@ -122,6 +123,8 @@ class Sabaki extends EventEmitter {
       coachMessages: [],
       coachByNode: {},
       coachReview: null,
+      // Criteria version reported by the attached coach; null until one speaks.
+      coachCriteria: null,
 
       // Drawers
 
@@ -2383,6 +2386,15 @@ class Sabaki extends EventEmitter {
       coachMessages: [...coachMessages, event].slice(-maxLength),
     }))
 
+    // Remember which grading criteria the attached coach is using, so a review
+    // loaded from a file that was graded by an older one can be flagged rather
+    // than compared against today's numbers as if they were the same scale.
+    if (typeof event.criteria === 'number') {
+      this.setState(({coachCriteria}) =>
+        coachCriteria === event.criteria ? {} : {coachCriteria: event.criteria},
+      )
+    }
+
     if (event.type === 'verdict') {
       let nodeId = this.resolveCoachNode(event)
 
@@ -2492,37 +2504,55 @@ class Sabaki extends EventEmitter {
       return
     }
 
-    let {gameTrees, gameIndex, gameCurrents} = this.state
-    let total =
-      gameTrees[gameIndex].getCurrentHeight(gameCurrents[gameIndex]) - 1
-    if (total <= 0) return
+    let {gameTrees, gameIndex} = this.state
+    let nodes = listReviewableNodes(gameTrees[gameIndex])
+    if (nodes.length === 0) return
 
     let visits = setting.get('coach.review_visits')
     let moveTimeout = setting.get('coach.review_move_timeout')
 
-    this.setState({coachReview: {current: 0, total}})
-    this.goToBeginning()
+    this.setState({coachReview: {current: 0, total: nodes.length}})
+
+    let goTo = (id) =>
+      this.setCurrentTreePosition(
+        this.state.gameTrees[this.state.gameIndex],
+        id,
+      )
 
     try {
-      for (let i = 0; i < total; i++) {
-        // Wait before stepping, not after: the verdict for the move about to be
-        // played is measured against the position being left, so that position
-        // has to be searched first.
-        await this.waitForAnalysisDepth(visits, moveTimeout)
+      // Search the position the first move is played from, so that move has
+      // something to be judged against.
+      goTo(nodes[0].parentId)
+      await this.waitForAnalysisDepth(visits, moveTimeout)
+
+      for (let i = 0; i < nodes.length; i++) {
+        let node = nodes[i]
         if (this.state.coachReview == null) return
 
-        this.goStep(1)
+        // Depth-first order usually leaves us already standing where this move
+        // was played from; only crossing into another variation costs a jump,
+        // and that new position then has to be searched in turn.
+        if (this.state.treePosition !== node.parentId) {
+          goTo(node.parentId)
+          await this.waitForAnalysisDepth(visits, moveTimeout)
+          if (this.state.coachReview == null) return
+        }
+
+        goTo(node.id)
         this.setState(({coachReview}) =>
           coachReview == null
             ? {}
             : {coachReview: {...coachReview, current: i + 1}},
         )
-      }
 
-      // One more dwell so the final move's verdict can still arrive: when the
-      // engine never searched the move, its cost is only known once the
-      // following position has been analysed.
-      await this.waitForAnalysisDepth(visits, moveTimeout)
+        // Dwell here before doing anything else. Navigating away immediately
+        // cancels the analysis Sabaki has only just scheduled, and with it the
+        // engine sync that tells the coach this move was played — so the move
+        // would go unjudged. The same dwell searches this position, which is
+        // what the next move will be judged against, and gives a move the
+        // engine never looked at the follow-up it needs to be priced.
+        await this.waitForAnalysisDepth(visits, moveTimeout)
+      }
     } finally {
       this.setState({coachReview: null})
     }

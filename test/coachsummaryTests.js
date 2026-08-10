@@ -4,6 +4,7 @@ import {
   blackLeadBefore,
   collectVerdicts,
   findTurningPoints,
+  listReviewableNodes,
   summarizeVerdicts,
 } from '../src/modules/coachsummary.js'
 
@@ -233,6 +234,46 @@ describe('findTurningPoints', () => {
 
     assert.strictEqual(points.length, 1)
     assert.strictEqual(points[0].moveNumber, 3)
+  })
+})
+
+describe('listReviewableNodes', () => {
+  // Reviewing walks this list, so the order has to reach a parent before its
+  // children: a move can only be judged from the position before it.
+  const tree = {
+    *listNodes() {
+      yield {id: 'root', parentId: null, data: {}}
+      yield {id: 'n1', parentId: 'root', data: {B: ['dp']}}
+      yield {id: 'n2a', parentId: 'n1', data: {W: ['pd']}}
+      yield {id: 'n3a', parentId: 'n2a', data: {B: ['dd']}}
+      yield {id: 'n2b', parentId: 'n1', data: {W: ['pp']}}
+    },
+  }
+
+  it('lists moves in depth-first order, parents before children', () => {
+    assert.deepStrictEqual(
+      listReviewableNodes(tree).map((n) => n.id),
+      ['n1', 'n2a', 'n3a', 'n2b'],
+    )
+  })
+
+  // A line the player explored is part of what they were thinking; skipping it
+  // would leave the panel blank exactly when they switch to it.
+  it('includes variations, not only the main line', () => {
+    assert.ok(listReviewableNodes(tree).some((n) => n.id === 'n2b'))
+  })
+
+  it('skips nodes that record no move, such as the root', () => {
+    assert.ok(!listReviewableNodes(tree).some((n) => n.id === 'root'))
+  })
+
+  it('returns nothing for an empty game', () => {
+    let empty = {
+      *listNodes() {
+        yield {id: 'root', parentId: null, data: {}}
+      },
+    }
+    assert.deepStrictEqual(listReviewableNodes(empty), [])
   })
 })
 
