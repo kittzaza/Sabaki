@@ -6,6 +6,7 @@ import CoachPanel from './sidebars/CoachPanel.js'
 import GtpConsole from './sidebars/GtpConsole.js'
 import {EnginePeerList} from './sidebars/PeerList.js'
 import {collectVerdicts, summarizeVerdicts} from '../modules/coachsummary.js'
+import {describeVerdict} from '../modules/coachshapes.js'
 
 const setting = {
   get: (key) => window.sabaki.setting.get(key),
@@ -202,6 +203,13 @@ export default class LeftSidebar extends Component {
               attached: attachedEngineSyncers.length > 0,
               coachMessages,
               currentVerdict: coachByNode[treePosition],
+              // Shape names are worked out here rather than in the panel because
+              // naming a move needs the board, and only this side has the tree.
+              currentShapes: describeVerdict(
+                gameTrees[gameIndex],
+                treePosition,
+                coachByNode[treePosition],
+              ),
               review: coachReview,
               criteria: coachCriteria,
               report: this.getCoachReport(

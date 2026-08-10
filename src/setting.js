@@ -68,6 +68,10 @@ let defaults = {
   // roughly two minutes at this setting.
   'coach.review_visits': 200,
   'coach.review_move_timeout': 20000,
+  // Ask the coach engine what a human of the configured rank would play in each
+  // position. Costs one network evaluation per position, and does nothing at
+  // all unless the engine was started with a human SL model.
+  'coach.ask_human_policy': true,
   'comments.show_move_interpretation': true,
   'comments.commit_delay': 500,
   'console.max_history_count': 1000,

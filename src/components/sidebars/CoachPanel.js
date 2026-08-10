@@ -26,11 +26,11 @@ const severityClass = (severity) =>
     : 'neutral'
 
 class CoachVerdict extends Component {
-  shouldComponentUpdate({event}) {
-    return event !== this.props.event
+  shouldComponentUpdate({event, shapes}) {
+    return event !== this.props.event || shapes !== this.props.shapes
   }
 
-  render({event, pinned, staleCriteria}) {
+  render({event, pinned, staleCriteria, shapes}) {
     let {label, vertex, loss, lossUnit, severity, lines} = event
 
     let lossText =
@@ -66,6 +66,51 @@ class CoachVerdict extends Component {
         {class: 'body'},
         lines.slice(1).map((line) => h('p', {}, stripPrefix(line))),
       ),
+
+      // How often players at this rank choose this move. The wording is already
+      // in `lines`; this badge exists so the distinction between a shared
+      // misunderstanding and a one-off slip is visible without reading.
+      event.human == null || event.human.played == null
+        ? null
+        : h(
+            'div',
+            {
+              class: classNames('human-badge', {
+                common: event.human.played >= commonHumanMoveProb,
+              }),
+            },
+            `${event.human.level} · ${(event.human.played * 100).toFixed(1)}%`,
+            h(
+              'span',
+              {class: 'note'},
+              event.human.played >= commonHumanMoveProb
+                ? summaryText.humanCommon
+                : summaryText.humanRare,
+            ),
+          ),
+
+      // The name of the shape a move makes is vocabulary the learner can look
+      // up and recognise next time; a point loss on its own cannot be.
+      shapes == null
+        ? null
+        : h(
+            'div',
+            {class: 'shapes'},
+            shapes.played != null
+              ? h(
+                  'span',
+                  {class: 'shape played'},
+                  `${summaryText.shapePlayed} ${shapes.played}`,
+                )
+              : null,
+            shapes.best != null
+              ? h(
+                  'span',
+                  {class: 'shape best'},
+                  `${summaryText.shapeBest} ${shapes.best}`,
+                )
+              : null,
+          ),
     )
   }
 }
@@ -114,7 +159,15 @@ const summaryText = {
   staleHint:
     'คำวิจารณ์นี้ตัดสินด้วยเกณฑ์คนละรุ่นกับโค้ชที่ต่ออยู่ตอนนี้ ตัวเลขจึงเทียบกันตรง ๆ ไม่ได้',
   staleSummary: 'บางส่วนใช้เกณฑ์เก่า',
+  shapePlayed: 'ตาที่เดิน:',
+  shapeBest: 'ตาที่แนะนำ:',
+  humanCommon: 'เป็นตาที่คนระดับนี้เดินกันบ่อย',
+  humanRare: 'แทบไม่มีคนระดับนี้เดินตานี้',
 }
+
+// ตาที่ผู้เล่นระดับนั้นเลือกอย่างน้อยเท่านี้ ถือว่าเป็นความเข้าใจผิดร่วมของระดับ
+// ไม่ใช่ความพลาดเฉพาะตัว — ต้องตรงกับ COMMON_HUMAN_MOVE_PROB ใน coach.py
+const commonHumanMoveProb = 0.05
 
 // A stored verdict is only known to be outdated once an attached coach has
 // reported which criteria it grades by; before that there is nothing to compare.
@@ -304,7 +357,15 @@ export default class CoachPanel extends Component {
   }
 
   render(
-    {coachMessages, currentVerdict, attached, report, review, criteria},
+    {
+      coachMessages,
+      currentVerdict,
+      currentShapes,
+      attached,
+      report,
+      review,
+      criteria,
+    },
     {summaryExpanded},
   ) {
     let empty = coachMessages.length === 0
@@ -368,6 +429,7 @@ export default class CoachPanel extends Component {
             event: currentVerdict,
             pinned: true,
             staleCriteria: isStaleCriteria(currentVerdict, criteria),
+            shapes: currentShapes,
           })
         : null,
 

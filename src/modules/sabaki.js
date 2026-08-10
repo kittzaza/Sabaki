@@ -2304,6 +2304,23 @@ class Sabaki extends EventEmitter {
 
     let interval = setting.get('board.analysis_interval').toString()
 
+    // Ask the coach what a human of the configured rank would play here, before
+    // starting the search. It answers a different question from the analysis —
+    // what players at this level actually do, not what is best — which is what
+    // separates a mistake the whole rank makes from one peculiar to this player.
+    //
+    // It goes before the analyse command because any command sent during an
+    // analysis aborts it; the state tracker's queue keeps the two in order. The
+    // response is a single network evaluation, so the delay is negligible.
+    if (
+      setting.get('coach.ask_human_policy') &&
+      syncer.commands.includes('kata-raw-human-nn')
+    ) {
+      try {
+        syncer.queueCommand({name: 'kata-raw-human-nn', args: ['0']})
+      } catch (err) {}
+    }
+
     try {
       syncer.queueCommand({
         name: commandName,
