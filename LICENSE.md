@@ -1,6 +1,13 @@
+Coach Go is a fork of [Sabaki](https://github.com/SabakiHQ/Sabaki) by Yichuan
+Shen. The board, the SGF editor, the game tree and the engine handling are
+Sabaki's work; the Thai coach and the Thai interface are added on top. Both are
+covered by the licence below, and Sabaki's copyright notice is kept in full as
+that licence requires.
+
 The MIT License (MIT)
 
-Copyright (c) 2015-2020 Yichuan Shen
+- Copyright (c) 2015-2020 Yichuan Shen (Sabaki)
+- Copyright (c) 2026 kittzaza (Coach Go)
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of
 this software and associated documentation files (the "Software"), to deal in

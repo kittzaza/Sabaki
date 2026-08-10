@@ -9,9 +9,9 @@ test.describe('Smoke Tests', () => {
     expect(windows.length).toBeGreaterThanOrEqual(1)
   })
 
-  test('window title contains "Sabaki"', async ({page}) => {
+  test('window title contains "Coach Go"', async ({page}) => {
     const title = await page.title()
-    expect(title).toContain('Sabaki')
+    expect(title).toContain('Coach Go')
   })
 
   test('no black screen — goban renders', async ({page}) => {

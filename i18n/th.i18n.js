@@ -185,6 +185,7 @@ module.exports = {
     'Check for Updates': 'ตรวจหารุ่นใหม่',
     'GitHub Repository': 'repository บน GitHub',
     'Report Issue': 'แจ้งปัญหา',
+    'Based on Sabaki v${version}': (p) => `พัฒนาต่อจาก Sabaki รุ่น ${p.version}`,
   },
   'menu.developer': {
     Developer: 'สำหรับนักพัฒนา',

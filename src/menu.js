@@ -3,8 +3,13 @@ const nativeRequire = eval('require')
 const {shell, clipboard} = require('electron')
 const isRenderer = typeof window !== 'undefined' && window.sabaki != null
 const {app} = isRenderer
-  ? {app: {name: 'Sabaki', getVersion: () => ''}}
+  ? {app: {name: 'Coach Go', getVersion: () => ''}}
   : require('electron')
+
+// Read from package.json so the fork's identity and its credit to Sabaki are
+// stated in one place and cannot drift apart from what the installer says.
+const {repository, basedOn} = require('../package.json')
+const repositoryUrl = repository.url.replace(/\.git$/, '')
 
 const i18n = require('./i18n')
 const sabaki = isRenderer ? require('./modules/sabaki').default : null
@@ -920,15 +925,21 @@ exports.get = function (props = {}) {
         {type: 'separator'},
         {
           label: i18n.t('menu.help', 'GitHub &Repository'),
-          click: () =>
-            shell.openExternal(`https://github.com/SabakiHQ/${sabaki.appName}`),
+          click: () => shell.openExternal(repositoryUrl),
         },
         {
           label: i18n.t('menu.help', 'Report &Issue'),
-          click: () =>
-            shell.openExternal(
-              `https://github.com/SabakiHQ/${sabaki.appName}/issues`,
-            ),
+          click: () => shell.openExternal(`${repositoryUrl}/issues`),
+        },
+        {type: 'separator'},
+        // Coach Go is a fork; the board, the editor and everything around the
+        // coach panel are Sabaki's work. Saying so where a user can see it is
+        // part of what the MIT licence is for.
+        {
+          label: i18n.t('menu.help', (p) => `Based on Sabaki v${p.version}`, {
+            version: basedOn.version,
+          }),
+          click: () => shell.openExternal(basedOn.url),
         },
       ],
     },

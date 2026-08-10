@@ -1,22 +1,28 @@
 {
-  "name": "sabaki",
-  "productName": "Sabaki",
-  "version": "0.60.2",
-  "description": "An elegant Go/Baduk/Weiqi board and SGF editor for a more civilized age.",
-  "author": "Yichuan Shen <shen.yichuan@gmail.com>",
-  "homepage": "http://sabaki.yichuanshen.de",
+  "name": "coach-go",
+  "productName": "Coach Go",
+  "version": "1.0.0",
+  "description": "โปรแกรมสอนโกะภาษาไทย — กระดานโกะและตัวแก้ไข SGF ของ Sabaki พร้อมโค้ชที่วิจารณ์หมากเป็นภาษาไทย",
+  "author": "kittzaza",
+  "homepage": "https://github.com/kittzaza/Sabaki",
   "license": "MIT",
   "main": "./src/main.js",
-  "repository": {
-    "type": "git",
+  "basedOn": {
+    "name": "Sabaki",
+    "version": "0.60.2",
+    "author": "Yichuan Shen",
     "url": "https://github.com/SabakiHQ/Sabaki"
   },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/kittzaza/Sabaki"
+  },
   "bugs": {
-    "url": "https://github.com/SabakiHQ/Sabaki/issues"
+    "url": "https://github.com/kittzaza/Sabaki/issues"
   },
   "build": {
-    "appId": "de.yichuanshen.sabaki",
-    "copyright": "Copyright © 2015-2026 Yichuan Shen",
+    "appId": "io.github.kittzaza.coachgo",
+    "copyright": "Copyright © 2015-2026 Yichuan Shen (Sabaki) · Copyright © 2026 kittzaza (Coach Go)",
     "compression": "normal",
     "electronFuses": {
       "runAsNode": false,
@@ -31,7 +37,7 @@
     "linux": {
       "target": "AppImage",
       "category": "Game",
-      "artifactName": "sabaki-v${version}-linux-${arch}.${ext}"
+      "artifactName": "coach-go-v${version}-linux-${arch}.${ext}"
     },
     "flatpak": {
       "runtimeVersion": "23.08",
@@ -46,7 +52,7 @@
         "--filesystem=home",
         "--talk-name=org.freedesktop.Flatpak"
       ],
-      "artifactName": "sabaki-v${version}-linux-${arch}-beta.${ext}"
+      "artifactName": "coach-go-v${version}-linux-${arch}-beta.${ext}"
     },
     "mac": {
       "target": [
@@ -54,10 +60,10 @@
       ],
       "notarize": true,
       "category": "public.app-category.board-games",
-      "artifactName": "sabaki-v${version}-mac-${arch}.${ext}"
+      "artifactName": "coach-go-v${version}-mac-${arch}.${ext}"
     },
     "win": {
-      "artifactName": "sabaki-v${version}-win.exe"
+      "artifactName": "coach-go-v${version}-win.exe"
     },
     "nsis": {
       "oneClick": false,
@@ -163,8 +169,8 @@
     "dist:macos": "npm run bundle && electron-builder -m --x64 --arm64 --publish never",
     "dist:linux": "npm run bundle && electron-builder -l --x64 --arm64 --publish never && node ./ci/normalizeArtifactNames.js",
     "dist:flatpak": "npm run bundle && electron-builder -l flatpak --publish never",
-    "dist:win64": "npm run bundle && electron-builder -w --x64 --publish never && node ./ci/mv.js ./dist/sabaki-vx.x.x-win.exe ./dist/sabaki-vx.x.x-win-x64-setup.exe",
-    "dist:win64-portable": "npm run bundle && electron-builder -w portable --x64 --publish never && node ./ci/mv.js ./dist/sabaki-vx.x.x-win.exe ./dist/sabaki-vx.x.x-win-x64-portable.exe",
+    "dist:win64": "npm run bundle && electron-builder -w --x64 --publish never && node ./ci/mv.js ./dist/coach-go-vx.x.x-win.exe ./dist/coach-go-vx.x.x-win-x64-setup.exe",
+    "dist:win64-portable": "npm run bundle && electron-builder -w portable --x64 --publish never && node ./ci/mv.js ./dist/coach-go-vx.x.x-win.exe ./dist/coach-go-vx.x.x-win-x64-portable.exe",
     "dist:win": "npm run dist:win64 && npm run dist:win64-portable",
     "i18n": "node ./ci/createI18n.js",
     "gen:engine-transcripts": "node ./scripts/engine-transcripts/capture.mjs",

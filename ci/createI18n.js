@@ -9,11 +9,16 @@ let getKeyPath = path.resolve(__dirname, './dolmGetKey.js')
 let defaultPath = path.resolve(__dirname, '../i18n/en.i18n.js')
 let templatePath = path.resolve(__dirname, '../i18n/template.i18n.js')
 
-let spawnDolmGen = (args) =>
-  spawnSync(
-    process.platform === 'win32' ? 'npx.cmd' : 'npx',
+// dolm is run through Node directly rather than through npx: spawnSync could
+// not resolve npx.cmd on Windows, and since the result was never checked the
+// script carried on and died later on a file dolm had never written.
+let dolmCli = require.resolve('dolm/tools/cli/main.js')
+
+let spawnDolmGen = (args) => {
+  let result = spawnSync(
+    process.execPath,
     [
-      'dolm',
+      dolmCli,
       'gen',
       '--dolm-identifier',
       'i18n',
@@ -25,6 +30,15 @@ let spawnDolmGen = (args) =>
       stdio: 'inherit',
     },
   )
+
+  if (result.error != null || result.status !== 0) {
+    throw new Error(
+      `dolm gen failed (${result.error ?? `exit ${result.status}`})`,
+    )
+  }
+
+  return result
+}
 
 let boardmatcherStringsArr = [
   ...boardmatcherLibrary.map((pattern) => pattern.name),

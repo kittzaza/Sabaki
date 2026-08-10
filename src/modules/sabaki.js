@@ -149,7 +149,7 @@ class Sabaki extends EventEmitter {
 
     this.events = new EventEmitter()
     // App info will be set via IPC - use defaults initially
-    this.appName = 'Sabaki'
+    this.appName = 'Coach Go'
     this.version = ''
     this._initAppInfo()
 

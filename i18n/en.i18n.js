@@ -164,7 +164,8 @@ module.exports = {
     "${appName} v${version}": p => `${p.appName} v${p.version}`,
     "Check for Updates": "Check for &Updates",
     "GitHub Repository": "GitHub &Repository",
-    "Report Issue": "Report &Issue"
+    "Report Issue": "Report &Issue",
+    "Based on Sabaki v${version}": p => `Based on Sabaki v${p.version}`
   },
   "menu.developer": {
     "Developer": "Devel&oper",

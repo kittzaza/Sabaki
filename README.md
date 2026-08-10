@@ -1,8 +1,24 @@
-# ![Sabaki: An elegant Go/Baduk/Weiqi board and SGF editor for a more civilized age.](./banner.png)
+# Coach Go — โปรแกรมสอนโกะภาษาไทย
 
-[![Download the latest release](https://img.shields.io/github/downloads/SabakiHQ/Sabaki/latest/total?label=download)](https://github.com/SabakiHQ/Sabaki/releases)
-[![CI](https://github.com/SabakiHQ/Sabaki/workflows/CI/badge.svg?branch=master&event=push)](https://github.com/SabakiHQ/Sabaki/actions)
-[![Donate](https://img.shields.io/badge/donate-paypal-blue.svg)](https://www.paypal.me/yishn/5)
+กระดานโกะและตัวแก้ไข SGF ที่มีโค้ชคอยวิจารณ์หมากเป็นภาษาไทย
+บอกว่าตาไหนเสียกี่แต้ม ตาที่ควรเดินคือตาไหน รูปหมากนั้นเรียกว่าอะไร
+และผู้เล่นระดับเดียวกับคุณมักเดินตรงไหน ทั้งโปรแกรมเป็นภาษาไทย
+และเกณฑ์ตัดสินแยกตามระดับฝีมือของผู้เรียน
+
+ตรรกะของโค้ชทั้งหมดอยู่ใน
+[Project_Thai_Go_AI_Coach](https://github.com/kittzaza/Project_Thai_Go_AI_Coach)
+ซึ่งเป็น GTP proxy คั่นระหว่างโปรแกรมนี้กับ KataGo — รีโปนี้เก็บเฉพาะส่วนแสดงผล
+
+## เกี่ยวกับต้นทาง
+
+Coach Go เป็น fork ของ [Sabaki](https://github.com/SabakiHQ/Sabaki) โดย Yichuan
+Shen
+
+กระดาน ตัวแก้ไข SGF ต้นไม้เกม และการต่อ engine ทั้งหมดเป็นผลงานของ Sabaki
+ส่วนที่เพิ่มเข้ามาคือแผงโค้ช การรีวิวทั้งเกม และคำแปลภาษาไทย
+
+เอกสารด้านล่างนี้เป็นของ Sabaki ต้นทาง
+และยังใช้ได้กับโปรแกรมนี้เพราะไม่ได้แก้ส่วนนั้น
 
 ## Features
 
