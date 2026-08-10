@@ -122,6 +122,7 @@ module.exports = {
     'Show Engines Sidebar': 'แสดงแถบ engine',
     // ของ fork นี้เอง ไม่มีในไฟล์ต้นฉบับของ Sabaki
     'Show Coach Panel': 'แสดงแผงโค้ช',
+    'Coach Setup…': 'ตั้งค่าโค้ช…',
     'Toggle Analysis': 'เปิด/ปิดการวิเคราะห์',
     'None of the attached engines support analysis.':
       'engine ที่ต่ออยู่ไม่มีตัวไหนวิเคราะห์ได้',
@@ -507,6 +508,22 @@ module.exports = {
     Themes: 'ธีม',
     Engines: 'Engine',
     Close: 'ปิด',
+  },
+  // หน้าตั้งค่าครั้งแรก — สิ่งแรกที่ผู้เรียนเห็น
+  CoachSetupDrawer: {
+    'Set Up the Coach': 'ตั้งค่าโค้ช',
+    'Tell the coach how strong you are and it will grade against that level. Losing one point is nothing for a beginner and a clear mistake for a dan player.':
+      'บอกระดับฝีมือของคุณ แล้วโค้ชจะตัดสินด้วยเกณฑ์ของระดับนั้น — เสีย 1 แต้มไม่ใช่ความผิดพลาดของผู้เริ่มต้น แต่เป็นความผิดพลาดที่ชัดเจนของผู้เล่นระดับดั้ง',
+    'Analysis engine (KataGo)': 'เครื่องวิเคราะห์ (KataGo)',
+    'Ready: ${path}': (p) => `พร้อมแล้ว: ${p.path}`,
+    'Not on this computer yet. About ${size} to download, once, over the internet.':
+      (p) => `ยังไม่มีในเครื่องนี้ ต้องดาวน์โหลดราว ${p.size} ครั้งเดียว ผ่านอินเทอร์เน็ต`,
+    'Downloading ${name} (${step} of ${steps})': (p) =>
+      `กำลังดาวน์โหลด ${p.name} (${p.step}/${p.steps})`,
+    'Download It for Me': 'ดาวน์โหลดให้อัตโนมัติ',
+    'I Already Have KataGo…': 'ฉันมี KataGo อยู่แล้ว…',
+    'Start Coaching': 'เริ่มใช้งาน',
+    Later: 'ไว้ทีหลัง',
   },
   ScoreDrawer: {
     Black: 'ดำ',

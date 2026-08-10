@@ -67,6 +67,15 @@ class App extends Component {
       sabaki.events.emit('ready')
     })
 
+    // A learner who has never run this before has no coach until KataGo and a
+    // level are chosen, and nothing on the board would tell them that. Ask once,
+    // on the first launch, rather than letting them find an engine that fails.
+    window.sabaki.coach.getStatus().then((status) => {
+      if (!status.ready && sabaki.state.openDrawer == null) {
+        sabaki.openDrawer('coachsetup')
+      }
+    })
+
     ipcRenderer.on('load-file', (evt, ...args) => {
       setTimeout(
         () => sabaki.loadFile(...args),

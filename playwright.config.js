@@ -90,6 +90,11 @@ module.exports = defineConfig({
       dependencies: ['smoke'],
     },
     {
+      name: 'coach-setup',
+      testMatch: /coach-setup\.spec\.js/,
+      dependencies: ['smoke'],
+    },
+    {
       name: 'coach-engine-registration',
       testMatch: /coach-engine-registration\.spec\.js/,
       dependencies: ['smoke'],

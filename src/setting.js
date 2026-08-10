@@ -74,6 +74,14 @@ let defaults = {
   // position. Costs one network evaluation per position, and does nothing at
   // all unless the engine was started with a human SL model.
   'coach.ask_human_policy': true,
+  // The learner's level, chosen on the setup screen. Null means setup has not
+  // been done, which is what makes that screen appear. It decides the coach's
+  // grading thresholds, the rank the human model imitates, and search depth.
+  'coach.level': null,
+  // Where KataGo is. Empty means the copy the app downloaded into its own user
+  // data directory; a path here is one the user pointed at instead, so someone
+  // who already has KataGo tuned for their machine keeps using it.
+  'coach.katago_directory': '',
   'comments.show_move_interpretation': true,
   'comments.commit_delay': 500,
   'console.max_history_count': 1000,

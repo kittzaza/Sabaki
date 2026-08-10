@@ -8,6 +8,7 @@ import PreferencesDrawer from './drawers/PreferencesDrawer.js'
 import GameChooserDrawer from './drawers/GameChooserDrawer.js'
 import CleanMarkupDrawer from './drawers/CleanMarkupDrawer.js'
 import AdvancedPropertiesDrawer from './drawers/AdvancedPropertiesDrawer.js'
+import CoachSetupDrawer from './drawers/CoachSetupDrawer.js'
 
 export default class DrawerManager extends Component {
   constructor() {
@@ -113,6 +114,10 @@ export default class DrawerManager extends Component {
         show: openDrawer === 'cleanmarkup',
         gameTree,
         treePosition,
+      }),
+
+      h(CoachSetupDrawer, {
+        show: openDrawer === 'coachsetup',
       }),
 
       h(AdvancedPropertiesDrawer, {

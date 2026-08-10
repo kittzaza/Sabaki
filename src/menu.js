@@ -510,6 +510,12 @@ exports.get = function (props = {}) {
             }))
           },
         },
+        {
+          // The setup screen appears by itself on a first launch, but a
+          // learner who gets stronger needs to come back and change the level.
+          label: i18n.t('menu.engines', 'Coach &Setup…'),
+          click: () => sabaki.openDrawer('coachsetup'),
+        },
         {type: 'separator'},
         {
           label: i18n.t('menu.engines', 'Toggle &Analysis'),

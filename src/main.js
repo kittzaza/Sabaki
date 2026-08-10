@@ -14,6 +14,13 @@ const setting = require('./setting')
 const updater = require('./updater')
 const {getOpenFileFromArgv} = require('./argv')
 const {registerCoachEngine} = require('./coachengine')
+const coachsetup = require('./coachsetup')
+
+const {repository} = require('../package.json')
+const updateRepository = repository.url.replace(
+  /^https:\/\/github\.com\/|\.git$/g,
+  '',
+)
 
 let windows = []
 let openfile = null
@@ -136,7 +143,9 @@ function buildMenu(props = {}) {
 async function checkForUpdates({showFailDialogs = false} = {}) {
   try {
     let t = i18n.context('updater')
-    let info = await updater.check(`SabakiHQ/${app.name}`)
+    // This fork's own repository. Left as SabakiHQ it would offer the user
+    // upstream Sabaki's releases as updates to Coach Go.
+    let info = await updater.check(updateRepository)
 
     if (info.hasUpdates) {
       dialog.showMessageBox(
@@ -198,6 +207,44 @@ function setupWindowEventForwarding(win) {
 }
 
 function setupIpcHandlers() {
+  // Coach setup. The renderer asks; the work -- writing files, downloading
+  // KataGo -- stays here, where the filesystem and the network already live.
+  ipcMain.handle('coach:status', () => ({
+    ready: coachsetup.isSetUp(),
+    level: setting.get('coach.level'),
+    katagoPath: coachsetup.findKataGo(),
+    directory:
+      setting.get('coach.katago_directory') || coachsetup.katagoDirectory,
+    hasHumanModel: coachsetup.findHumanModel() != null,
+  }))
+
+  ipcMain.handle('coach:chooseKataGoDirectory', async (evt) => {
+    let result = await dialog.showOpenDialog(
+      BrowserWindow.fromWebContents(evt.sender),
+      {properties: ['openDirectory']},
+    )
+
+    return result.canceled ? null : result.filePaths[0]
+  })
+
+  ipcMain.handle('coach:download', async (evt) => {
+    // Progress goes back as events rather than as a return value: these are
+    // hundreds of megabytes, and a window that just sits there looks broken.
+    await coachsetup.downloadKataGo((progress) => {
+      if (!evt.sender.isDestroyed()) evt.sender.send('coach:progress', progress)
+    })
+
+    return coachsetup.katagoDirectory
+  })
+
+  ipcMain.handle('coach:write', (evt, options) => {
+    let path = coachsetup.writeCoachSetup(options)
+    // The engine entry carries the executable path, which nothing has changed;
+    // re-registering keeps it correct if this is the first run after an update.
+    registerCoachEngine()
+    return path
+  })
+
   // App info
   ipcMain.handle('app:getName', () => app.name)
   ipcMain.handle('app:getVersion', () => app.getVersion())

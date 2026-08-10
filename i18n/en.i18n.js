@@ -106,6 +106,7 @@ module.exports = {
     "Engines": "Eng&ines",
     "Show Engines Sidebar": "Show &Engines Sidebar",
     "Show Coach Panel": "Show &Coach Panel",
+    "Coach Setup…": "Coach &Setup…",
     "Toggle Analysis": "Toggle &Analysis",
     "None of the attached engines support analysis.": "None of the attached engines support analysis.",
     "Start Engine vs. Engine Game": "Start Engine vs. Engine &Game",
@@ -339,6 +340,20 @@ module.exports = {
     "Analysis data": "Analysis data",
     "Remove": "Remove",
     "Close": "Close"
+  },
+  "CoachSetupDrawer": {
+    "Downloading ${name} (${step} of ${steps})": p =>
+      `Downloading ${p.name} (${p.step} of ${p.steps})`,
+    "Set Up the Coach": "Set Up the Coach",
+    "Tell the coach how strong you are and it will grade against that level. Losing one point is nothing for a beginner and a clear mistake for a dan player.": "Tell the coach how strong you are and it will grade against that level. Losing one point is nothing for a beginner and a clear mistake for a dan player.",
+    "Analysis engine (KataGo)": "Analysis engine (KataGo)",
+    "Ready: ${path}": p => `Ready: ${p.path}`,
+    "Not on this computer yet. About ${size} to download, once, over the internet.": p =>
+      `Not on this computer yet. About ${p.size} to download, once, over the internet.`,
+    "Download It for Me": "Download It for Me",
+    "I Already Have KataGo…": "I Already Have KataGo…",
+    "Start Coaching": "Start Coaching",
+    "Later": "Later"
   },
   "GameChooserDrawer": {
     "Black": "Black",

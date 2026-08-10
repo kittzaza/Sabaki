@@ -40,7 +40,26 @@ ipcRenderer.on('setting:change', (_, data) => {
   }
 })
 
+// Download progress for the coach setup screen, dispatched the same way as
+// setting changes so the screen can subscribe and unsubscribe.
+const coachProgressCallbacks = new Set()
+ipcRenderer.on('coach:progress', (_, progress) => {
+  for (const callback of coachProgressCallbacks) callback(progress)
+})
+
 window.sabaki = {
+  // First-run setup of the coach engine: which level, and where KataGo is.
+  coach: {
+    getStatus: () => ipcRenderer.invoke('coach:status'),
+    chooseDirectory: () => ipcRenderer.invoke('coach:chooseKataGoDirectory'),
+    download: () => ipcRenderer.invoke('coach:download'),
+    write: (options) => ipcRenderer.invoke('coach:write', options),
+    onProgress: (callback) => {
+      coachProgressCallbacks.add(callback)
+      return () => coachProgressCallbacks.delete(callback)
+    },
+  },
+
   // Settings - sync get with cache, async set
   setting: {
     get: (key) => {
