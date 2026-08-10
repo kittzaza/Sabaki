@@ -84,5 +84,10 @@ module.exports = defineConfig({
       testMatch: /heatmap-label-font\.spec\.js/,
       dependencies: ['smoke'],
     },
+    {
+      name: 'thai-ui',
+      testMatch: /thai-ui\.spec\.js/,
+      dependencies: ['smoke'],
+    },
   ],
 })

@@ -2,6 +2,13 @@ const {expect} = require('@playwright/test')
 const {test} = require('./fixtures/electron-app')
 const {loadSgfStringAndWait, waitForRender} = require('./helpers')
 
+// The labels are read from the language file rather than written out here: this
+// fork's interface is in Thai, and what these tests are about is the shape of
+// the menu, not the wording of two of its items.
+const strings = require('../i18n/th.i18n.js')['menu.edit']
+const ANNOTATE = strings['Annotate']
+const ADD_VIEW_COMMENT = strings['Add/View Comment']
+
 // Tests for the game-tree node right-click menu (openNodeMenu).
 //
 // That menu is a *native* Electron menu, so it can't be opened or clicked
@@ -49,12 +56,14 @@ test.describe('Game tree node menu', () => {
 
     const labels = await nodeMenuLabels(page, id)
 
-    expect(labels).toContain('Annotate')
-    expect(labels).toContain('Add/View Comment')
+    expect(labels).toContain(ANNOTATE)
+    expect(labels).toContain(ADD_VIEW_COMMENT)
 
     // The old node-menu global toggle must not be present anymore. (It still
     // lives in the View menu; it just shouldn't be in this node-specific menu.)
-    expect(labels.some((label) => /show comments/i.test(label))).toBe(false)
+    const showComments =
+      require('../i18n/th.i18n.js')['menu.view']['Show Comments']
+    expect(labels).not.toContain(showComments)
   })
 
   test('"Add/View Comment" navigates to the node, reveals the comment box, and enters edit mode', async ({
@@ -75,22 +84,25 @@ test.describe('Game tree node menu', () => {
 
     // Invoke the actual menu item's click handler from the built template, so
     // the test exercises the menu wiring (not just openCommentEditor directly).
-    await page.evaluate((targetId) => {
-      const strip = (s) => (typeof s === 'string' ? s.replace(/&/g, '') : s)
-      const find = (items) => {
-        for (const item of items) {
-          if (item && strip(item.label) === 'Add/View Comment') return item
-          if (item && item.submenu) {
-            const found = find(item.submenu)
-            if (found) return found
+    await page.evaluate(
+      ([targetId, wanted]) => {
+        const strip = (s) => (typeof s === 'string' ? s.replace(/&/g, '') : s)
+        const find = (items) => {
+          for (const item of items) {
+            if (item && strip(item.label) === wanted) return item
+            if (item && item.submenu) {
+              const found = find(item.submenu)
+              if (found) return found
+            }
           }
+          return null
         }
-        return null
-      }
 
-      const item = find(window.__sabaki.getNodeMenuTemplate(targetId))
-      item.click()
-    }, id)
+        const item = find(window.__sabaki.getNodeMenuTemplate(targetId))
+        item.click()
+      },
+      [id, ADD_VIEW_COMMENT],
+    )
 
     await page.waitForFunction(
       (targetId) =>

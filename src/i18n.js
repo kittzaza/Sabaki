@@ -5,6 +5,37 @@ const path = require('path')
 const {load: dolmLoad, getKey: dolmGetKey} = require('dolm')
 const languages = require('@sabaki/i18n')
 
+// Thai ships with this fork rather than with @sabaki/i18n, so it is registered
+// here instead of coming from the package index. It is required directly rather
+// than read from disk like the packaged languages: a static require is resolved
+// by webpack in the renderer and by Node in the main process, which spares us
+// from working out where the file ended up in either.
+const localLanguages = {
+  th: {
+    name: 'Thai',
+    nativeName: 'ไทย',
+    strings: require('../i18n/th.i18n.js'),
+  },
+}
+
+for (let lang in localLanguages) {
+  let count = Object.values(localLanguages[lang].strings).reduce(
+    (sum, category) => sum + Object.keys(category).length,
+    0,
+  )
+
+  // Reported as complete because test/i18nThTests.js fails the build if any
+  // interface string is missing from the file.
+  localLanguages[lang].stats = {
+    totalStringsCount: count,
+    translatedStringsCount: count,
+    progress: 1,
+    unusedFlags: 0,
+  }
+}
+
+const allLanguages = Object.assign({}, languages, localLanguages)
+
 const isElectron = process.versions.electron != null
 const isRenderer = typeof window !== 'undefined' && window.sabaki != null
 
@@ -87,11 +118,17 @@ exports.loadFile = function (filename) {
 exports.loadLang = function (lang) {
   appLang = lang
 
+  let local = localLanguages[lang]
+  if (local != null) {
+    loadStrings(local.strings)
+    return
+  }
+
   exports.loadFile(languages[lang].filename)
 }
 
 exports.getLanguages = function () {
-  return languages
+  return allLanguages
 }
 
 if (appLang != null) {
