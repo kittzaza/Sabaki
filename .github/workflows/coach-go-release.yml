@@ -61,10 +61,10 @@ jobs:
         working-directory: sabaki
         run: npm ci
 
-      - name: Check formatting
-        working-directory: sabaki
-        run: npm run format-check
-
+      # Formatting is checked by ci.yml on Linux. Repeating it here fails on
+      # every file: .gitattributes normalises to LF in the repository but checks
+      # out native line endings, so a Windows checkout is CRLF and prettier,
+      # which expects LF, rejects the lot. That tests the checkout, not the code.
       - name: Run unit tests
         working-directory: sabaki
         run: npm test
