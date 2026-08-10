@@ -1,6 +1,9 @@
 /engines/
 
 dist/
+# The coach engine is built from its own repository and staged here before
+# packaging (scripts/stageCoachEngine.js), never committed.
+build/coach/thai-go-coach*
 # Upstream generates these into the @sabaki/i18n package and keeps none of them
 # here. This fork ships its own Thai file, and keeps the extracted English list
 # beside it because test/i18nThTests.js checks the translation against it.

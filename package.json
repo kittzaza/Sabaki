@@ -109,11 +109,8 @@
     ],
     "extraResources": [
       {
-        "from": "../Project_Thai_Go_AI_Coach/dist",
-        "to": "coach",
-        "filter": [
-          "thai-go-coach*"
-        ]
+        "from": "build/coach",
+        "to": "coach"
       }
     ]
   },

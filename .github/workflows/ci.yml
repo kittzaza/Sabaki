@@ -2,7 +2,8 @@ name: CI
 
 on:
   push:
-    branches: [master]
+    # thai-coach is this fork's line of development; master tracks upstream.
+    branches: [master, thai-coach]
   pull_request:
 
 jobs:

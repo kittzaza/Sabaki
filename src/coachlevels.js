@@ -38,8 +38,9 @@ exports.levelPresets = {
 
 exports.defaultLevel = 'intermediate'
 
-// Downloaded on first run rather than shipped: together these are some 190 MB,
-// most of it a neural network updated independently of this app.
+// Downloaded on first run rather than shipped: together these are some 200 MB
+// (measured, not estimated -- see scripts/downloadKataGo.js), most of it neural
+// networks updated independently of this app.
 //
 // OpenCL rather than TensorRT, because TensorRT needs CUDA installed as well;
 // v1.17.1 rather than the newest, because 1.17.2 is a TensorRT-only bugfix and
@@ -51,13 +52,13 @@ exports.downloads = [
     file: 'katago.zip',
     extract: true,
     platform: 'win32',
-    approximateBytes: 5.3e6,
+    approximateBytes: 5.2e6,
   },
   {
     name: 'โมเดลวิเคราะห์',
     url: 'https://media.katagotraining.org/uploaded/networks/models/kata1/kata1-b18c384nbt-s9191485440-d4104563973.bin.gz',
     file: 'models/kata1-b18c384nbt.bin.gz',
-    approximateBytes: 93e6,
+    approximateBytes: 97.9e6,
   },
   {
     // Everything else works without this one, but it is what lets the coach
@@ -65,7 +66,7 @@ exports.downloads = [
     name: 'โมเดลผู้เล่นระดับต่าง ๆ',
     url: 'https://github.com/lightvector/KataGo/releases/download/v1.15.0/b18c384nbt-humanv0.bin.gz',
     file: 'models/b18c384nbt-humanv0.bin.gz',
-    approximateBytes: 95e6,
+    approximateBytes: 99.1e6,
   },
 ]
 

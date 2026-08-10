@@ -1,0 +1,92 @@
+# Builds the Coach Go installer for Windows.
+#
+# This exists because the build cannot be run on an ordinary Windows desktop:
+# electron-builder unpacks a signing toolchain containing macOS symlinks, and
+# creating symlinks on Windows needs a privilege that a normal user account does
+# not hold. A GitHub runner does, so the installer is built here rather than
+# asking every contributor to turn on Developer Mode.
+#
+# The coach engine is a separate program in its own repository. It is built
+# first with PyInstaller and staged into build/coach, which is what the
+# packaging step reads.
+
+name: Coach Go Release
+
+on:
+  push:
+    tags:
+      - coach-go-v*
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+
+    steps:
+      - name: Check out Coach Go
+        uses: actions/checkout@v4
+        with:
+          path: sabaki
+
+      - name: Check out the coach engine
+        uses: actions/checkout@v4
+        with:
+          repository: kittzaza/Project_Thai_Go_AI_Coach
+          path: Project_Thai_Go_AI_Coach
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: sabaki/.nvmrc
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      # The coach's judgement lives on the Python side, so a build that ships a
+      # coach engine failing its own tests is not worth producing.
+      - name: Test the coach engine
+        working-directory: Project_Thai_Go_AI_Coach
+        run: python -m unittest discover -s tests -t .
+
+      - name: Build the coach engine
+        working-directory: Project_Thai_Go_AI_Coach
+        run: |
+          pip install pyinstaller
+          python scripts/build_exe.py
+
+      - name: Install dependencies
+        working-directory: sabaki
+        run: npm ci
+
+      - name: Check formatting
+        working-directory: sabaki
+        run: npm run format-check
+
+      - name: Run unit tests
+        working-directory: sabaki
+        run: npm test
+        env:
+          CI: true
+
+      - name: Stage the coach engine
+        working-directory: sabaki
+        run: node scripts/stageCoachEngine.js
+
+      - name: Build the installer
+        working-directory: sabaki
+        run: npm run dist:win64
+
+      # No auto-update client ships yet, so the metadata electron-builder emits
+      # for one would only mislead.
+      - name: Remove auto-update metadata
+        working-directory: sabaki
+        run: npx rimraf --glob "./dist/*.yml" "./dist/*.yaml" "./dist/*.blockmap"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: coach-go-windows
+          path: sabaki/dist/coach-go-*
+          if-no-files-found: error

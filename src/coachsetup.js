@@ -9,22 +9,15 @@
 // Main-process module, so it sits at the src root: build.files drops
 // src/modules from the package (see test/packagingTests.js).
 
-const {createWriteStream, existsSync, mkdirSync, writeFileSync} = require('fs')
-const {spawnSync} = require('child_process')
-const {get} = require('https')
+const {existsSync, writeFileSync} = require('fs')
 const {join} = require('path')
 
 const setting = require('./setting')
 const {coachConfigPath} = require('./coachengine')
-const {
-  defaultLevel,
-  downloads,
-  gtpConfigContents,
-  levelPresets,
-} = require('./coachlevels')
+const {defaultLevel, gtpConfigContents, levelPresets} = require('./coachlevels')
+const {downloadKataGo} = require('./coachdownload')
 
 const katagoDirectory = join(setting.userDataDirectory, 'katago')
-const modelsDirectory = join(katagoDirectory, 'models')
 
 const executableName = process.platform === 'win32' ? 'katago.exe' : 'katago'
 
@@ -122,94 +115,12 @@ exports.isSetUp = function () {
   return existsSync(coachConfigPath) && exports.findKataGo() != null
 }
 
-function download(url, target, onProgress) {
-  return new Promise((resolve, reject) => {
-    let request = get(url, (response) => {
-      // GitHub and the model host both answer with a redirect to a signed URL.
-      if (response.statusCode >= 300 && response.statusCode < 400) {
-        response.resume()
-        return download(response.headers.location, target, onProgress).then(
-          resolve,
-          reject,
-        )
-      }
-
-      if (response.statusCode !== 200) {
-        response.resume()
-        return reject(new Error(`ดาวน์โหลดไม่สำเร็จ (${response.statusCode})`))
-      }
-
-      let total = Number(response.headers['content-length']) || 0
-      let received = 0
-      // Written to a temporary name so an interrupted download is never
-      // mistaken for a finished one on the next launch.
-      let partial = `${target}.part`
-      let file = createWriteStream(partial)
-
-      response.on('data', (chunk) => {
-        received += chunk.length
-        onProgress?.({received, total})
-      })
-
-      response.pipe(file)
-      file.on('error', reject)
-      file.on('finish', () => {
-        file.close(() => {
-          try {
-            require('fs').renameSync(partial, target)
-            resolve(target)
-          } catch (err) {
-            reject(err)
-          }
-        })
-      })
-    })
-
-    request.on('error', reject)
-  })
-}
-
 /**
- * Fetches KataGo and its networks into the user data directory.
+ * Fetches KataGo and its networks into the app's own directory.
  *
- * `onProgress` is called with the step being fetched and how far along it is,
- * because these are hundreds of megabytes and a window that simply sits there
- * looks broken.
+ * The fetching itself lives in coachdownload.js, which knows nothing about
+ * electron and so can be run against the real URLs without launching the app.
  */
-exports.downloadKataGo = async function (onProgress) {
-  mkdirSync(modelsDirectory, {recursive: true})
-
-  let steps = downloads.filter(
-    (step) => step.platform == null || step.platform === process.platform,
-  )
-
-  for (let [index, step] of steps.entries()) {
-    let target = join(katagoDirectory, step.file)
-    if (existsSync(target)) continue
-
-    await download(step.url, target, ({received, total}) =>
-      onProgress?.({
-        step: index + 1,
-        steps: steps.length,
-        name: step.name,
-        received,
-        total,
-      }),
-    )
-
-    if (step.extract) {
-      // bsdtar, which ships with Windows 10 and up and with macOS, and reads
-      // zip as well as tar. Spawning it beats adding an archive dependency for
-      // one file, and it is the only archive this app will ever open.
-      let result = spawnSync('tar', ['-xf', target, '-C', katagoDirectory], {
-        stdio: 'ignore',
-      })
-
-      if (result.error != null || result.status !== 0) {
-        throw new Error('แตกไฟล์ KataGo ไม่สำเร็จ')
-      }
-    }
-  }
-
-  return katagoDirectory
+exports.downloadKataGo = function (onProgress) {
+  return downloadKataGo(katagoDirectory, onProgress)
 }

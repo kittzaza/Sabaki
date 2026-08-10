@@ -61,7 +61,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: dist-${{ runner.os }}
-          path: dist/sabaki-*
+          # Renamed with the app: artifacts are coach-go-v*, not sabaki-v*.
+          # The Windows installer is built by coach-go-release.yml instead,
+          # which also builds and stages the coach engine.
+          path: dist/coach-go-*
           if-no-files-found: error
 
   # Flatpak, built natively per-arch (x86_64 + aarch64, e.g. Raspberry Pi).
