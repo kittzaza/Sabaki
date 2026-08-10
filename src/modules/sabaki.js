@@ -123,8 +123,12 @@ class Sabaki extends EventEmitter {
       coachMessages: [],
       coachByNode: {},
       coachReview: null,
-      // Criteria version reported by the attached coach; null until one speaks.
+      // Grading criteria reported by the attached coach; null until one speaks.
+      // coachCriteria is an opaque token compared only for equality;
+      // coachCriteriaLabel is its Thai name, for showing which level band the
+      // advice is being graded against.
       coachCriteria: null,
+      coachCriteriaLabel: null,
 
       // Drawers
 
@@ -2404,11 +2408,22 @@ class Sabaki extends EventEmitter {
     }))
 
     // Remember which grading criteria the attached coach is using, so a review
-    // loaded from a file that was graded by an older one can be flagged rather
+    // loaded from a file that was graded by another one can be flagged rather
     // than compared against today's numbers as if they were the same scale.
-    if (typeof event.criteria === 'number') {
+    // The token identifies both the level band and the version of the method
+    // ("advanced.2"); older files carry a bare version number instead. It is
+    // only ever compared for equality, so its shape does not matter here.
+    if (event.criteria != null && event.criteria !== '') {
       this.setState(({coachCriteria}) =>
-        coachCriteria === event.criteria ? {} : {coachCriteria: event.criteria},
+        coachCriteria === event.criteria
+          ? {}
+          : {
+              coachCriteria: event.criteria,
+              coachCriteriaLabel:
+                typeof event.criteriaLabel === 'string'
+                  ? event.criteriaLabel
+                  : null,
+            },
       )
     }
 

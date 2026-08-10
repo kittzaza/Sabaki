@@ -132,6 +132,7 @@ export default class LeftSidebar extends Component {
       coachByNode,
       coachReview,
       coachCriteria,
+      coachCriteriaLabel,
       treePosition,
       gameTrees,
       gameIndex,
@@ -212,6 +213,7 @@ export default class LeftSidebar extends Component {
               ),
               review: coachReview,
               criteria: coachCriteria,
+              criteriaLabel: coachCriteriaLabel,
               report: this.getCoachReport(
                 gameTrees[gameIndex],
                 gameCurrents[gameIndex],

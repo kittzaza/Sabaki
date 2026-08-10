@@ -157,8 +157,9 @@ const summaryText = {
   reviewing: 'กำลังรีวิว',
   cancel: 'ยกเลิก',
   staleHint:
-    'คำวิจารณ์นี้ตัดสินด้วยเกณฑ์คนละรุ่นกับโค้ชที่ต่ออยู่ตอนนี้ ตัวเลขจึงเทียบกันตรง ๆ ไม่ได้',
-  staleSummary: 'บางส่วนใช้เกณฑ์เก่า',
+    'คำวิจารณ์นี้ตัดสินด้วยเกณฑ์คนละชุดกับโค้ชที่ต่ออยู่ตอนนี้ (คนละระดับหรือคนละรุ่น) ตัวเลขจึงเทียบกันตรง ๆ ไม่ได้',
+  staleSummary: 'บางส่วนใช้เกณฑ์คนละชุด',
+  criteriaPrefix: 'เกณฑ์',
   shapePlayed: 'ตาที่เดิน:',
   shapeBest: 'ตาที่แนะนำ:',
   humanCommon: 'เป็นตาที่คนระดับนี้เดินกันบ่อย',
@@ -169,12 +170,17 @@ const summaryText = {
 // ไม่ใช่ความพลาดเฉพาะตัว — ต้องตรงกับ COMMON_HUMAN_MOVE_PROB ใน coach.py
 const commonHumanMoveProb = 0.05
 
-// A stored verdict is only known to be outdated once an attached coach has
-// reported which criteria it grades by; before that there is nothing to compare.
+// A stored verdict is only known to be graded differently once an attached
+// coach has reported which criteria it uses; before that there is nothing to
+// compare. The token is opaque — a level name plus a method version in current
+// files, a bare version number in older ones — so it is only tested for
+// equality and never taken apart.
 function isStaleCriteria(event, current) {
   return (
-    typeof current === 'number' &&
-    typeof event.criteria === 'number' &&
+    current != null &&
+    current !== '' &&
+    event.criteria != null &&
+    event.criteria !== '' &&
     event.criteria !== current
   )
 }
@@ -365,6 +371,7 @@ export default class CoachPanel extends Component {
       report,
       review,
       criteria,
+      criteriaLabel,
     },
     {summaryExpanded},
   ) {
@@ -379,6 +386,17 @@ export default class CoachPanel extends Component {
         {class: 'header'},
         h('span', {class: 'title'}, 'โค้ชโกะ'),
         !attached ? h('span', {class: 'hint'}, 'ยังไม่ได้ต่อ engine') : null,
+
+        // The same move is "ดี" for a beginner and "พลาด" for a dan player, so
+        // which band the numbers come from has to be visible — otherwise a
+        // learner cannot tell why the verdicts changed after switching profile.
+        criteriaLabel != null
+          ? h(
+              'span',
+              {class: 'criteria'},
+              `${summaryText.criteriaPrefix} ${criteriaLabel}`,
+            )
+          : null,
 
         review != null
           ? [

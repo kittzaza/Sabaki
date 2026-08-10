@@ -354,6 +354,16 @@ header {
     color: #777;
     font-size: 12px;
   }
+  /* Which level band the verdicts are graded against. Sits quietly next to the
+     title -- it is context for every number below, not a value in itself. */
+  .coach-panel .header .criteria {
+    padding: 0 5px;
+    border: 1px solid #2f343c;
+    border-radius: 3px;
+    color: #9aa0a6;
+    font-size: 11px;
+    white-space: nowrap;
+  }
   .coach-panel .header .review-progress {
     margin-left: auto;
     color: #9aa0a6;
