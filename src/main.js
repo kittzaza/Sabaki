@@ -13,6 +13,7 @@ const i18n = require('./i18n')
 const setting = require('./setting')
 const updater = require('./updater')
 const {getOpenFileFromArgv} = require('./argv')
+const {registerCoachEngine} = require('./coachengine')
 
 let windows = []
 let openfile = null
@@ -416,6 +417,11 @@ async function main() {
   })
 
   await app.whenReady()
+
+  // Before the first window, so the coach is already in the engine list by the
+  // time anything reads it. Done on every launch rather than only the first, so
+  // an update that moves the executable does not leave a stale path behind.
+  registerCoachEngine()
 
   setupIpcHandlers()
 

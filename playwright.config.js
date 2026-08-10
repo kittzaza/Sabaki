@@ -89,5 +89,10 @@ module.exports = defineConfig({
       testMatch: /thai-ui\.spec\.js/,
       dependencies: ['smoke'],
     },
+    {
+      name: 'coach-engine-registration',
+      testMatch: /coach-engine-registration\.spec\.js/,
+      dependencies: ['smoke'],
+    },
   ],
 })
